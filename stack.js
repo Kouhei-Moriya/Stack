@@ -3,19 +3,19 @@ function Stack(){
 	this.next = null;
 }
 function push(stk, data){
+	var temp = new Stack();
+	temp.value = data;
+	temp.next = stk;
+	stk = temp;
 	console.log(stk);
-	var temp = stk;
-	console.log(temp);
-	stk.value = data;
-	stk.next = temp;
-	stk.next = new Stack();
+	return stk;
 }
 function pop(){
 }
 
 var A = new Stack();
 push(A, 1);
+console.log(A);
 push(A, 2);
 console.log(A);
-
 
