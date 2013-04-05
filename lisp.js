@@ -19,9 +19,14 @@ repl.on("close", function() {
 	console.log("bye!");
 });
 
+//抽象構文木
+function Cons(type,car,cdr) {
+	//this.type = type;
+	this.car = car;
+	this.cdr = cdr;
+}
 
 function mylisp(line){
-	console.log(line);
 	//字句解析
 	var Token = new Array();
 	var p = 0;
@@ -29,20 +34,49 @@ function mylisp(line){
 		switch(line.charAt(i)){
 			case "(":
 			case ")":
-				if(i>0) Token.push(line.substring(p,i));
+				if(i>p) Token.push(line.substring(p,i));
 				Token.push(line.charAt(i));
 				p = i+1;
 				break;
 			case " ":
-				if(i>0) Token.push(line.substring(p,i));
+				if(i>p) Token.push(line.substring(p,i));
 				p = i+1;
 				break;
 		}
 	}
 	if(p<line.length) Token.push(line.substring(p));
-	for(i=0; i<Token.length; i++) console.log("Token[" + i + "]:" + Token[i]);
+	for(i=0; i<Token.length; i++){
+		console.log("Token[" + i + "]:" + Token[i]);
+		if(Token[i]=="(") console.log(nest(i));
+	}
 
 	//構文解析を書く場所
+	var cons;
+	for(i=0; i<Token.length; i++) if(Token[i]=="(") {
+		cons=createcons(i+1);
+		break;
+	}
+	console.log(cons);
+
+	function createcons(pos){
+		switch(Token[pos]){
+			case ")":
+				return null;
+			case "(":
+				var temp = createcons(pos+1);
+				return new Cons(null,temp,createcons(nest(pos)+1));
+			default:
+				return new Cons(null,Token[pos],createcons(pos+1));
+		}
+	}
+	function nest(pos){
+		var i;
+		for(i=pos+1; i<Token.length; i++){
+			if(Token[i]=="(") i=nest(i)+1;
+			if(Token[i]==")") return i;
+		}
+		return i;
+	}
 }
 
 
