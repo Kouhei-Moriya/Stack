@@ -22,27 +22,27 @@ repl.on("close", function() {
 
 function mylisp(line){
 	console.log(line);
+	//字句解析
 	var Token = new Array();
-	while(line.length > 0){
-		loop1:
-		for(i=0; i<line.length; i++){
-			switch(line.charAt(i)){
-				//line.substr(0,i)
-				case "(":
-				case ")":
-					if(i>0) Token.push(line.substring(0,i));
-					Token.push(line.charAt(i));
-					line = line.substring(i+1);
-					break loop1;
-				case " ":
-					if(i>0) Token.push(line.substring(0,i));
-					line = line.substring(i+1);
-					break loop1;
-			}
+	var p = 0;
+	for(i=0; i<line.length; i++){
+		switch(line.charAt(i)){
+			case "(":
+			case ")":
+				if(i>0) Token.push(line.substring(p,i));
+				Token.push(line.charAt(i));
+				p = i+1;
+				break;
+			case " ":
+				if(i>0) Token.push(line.substring(p,i));
+				p = i+1;
+				break;
 		}
 	}
-	Token.push(line);
-	for(i=0; i<Token.length; i++) console.log(Token[i]);
+	if(p<line.length) Token.push(line.substring(p));
+	for(i=0; i<Token.length; i++) console.log("Token[" + i + "]:" + Token[i]);
+
+	//構文解析を書く場所
 }
 
 
