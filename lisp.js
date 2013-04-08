@@ -70,9 +70,9 @@ function mylisp(line){
 			case ")":
 				return null;
 			case "(":
-				return new Cons(null,createcons(pos+1),createcons(bracket(pos)+1));
+				return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
 			default:
-				return new Cons(null,Token[pos],createcons(pos+1));
+				return new Cons(typeof(Token[pos]),Token[pos],createcons(pos+1));
 		}
 	}
 	//"("の入っている要素を指定、対応する")"のある要素を返す
@@ -90,14 +90,44 @@ function mylisp(line){
 
 	//評価の関数
 	function evallisp(node){
-		if(node === void 0) return null;
 		switch(node.car){
 			case "+":
-				return evalplus(node.cdr);
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return add(node.cdr);
+			case "-":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return subtract(node.cdr);
+			case "*":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return multiply(node.cdr);
+			case "/":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return divide(node.cdr);
+			default:
+				return "???";
 		}
 
-		function evalplus(node){
-			
+		function add(node){
+			if(node==null) return 0;
+			if(node.type=="object") return evallisp(node.car)+add(node.cdr);
+			return parseInt(node.car)+add(node.cdr);
+		}
+		function subtract(node){
+			if(node.type=="object") return evallisp(node.car)-add(node.cdr);
+			return node.car-add(node.cdr);
+		}
+		function multiply(node){
+			if(node==null) return 1;
+			if(node.type=="object") return evallisp(node.car)*multiply(node.cdr);
+			return node.car*multiply(node.cdr);
+		}
+		function divide(node){
+			if(node.type=="object") return Math.floor(evallisp(node.car)/multiply(node.cdr));
+			return Math.floor(node.car/multiply(node.cdr));
 		}
 	}
 }
