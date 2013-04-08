@@ -21,11 +21,12 @@ repl.on("close", function() {
 
 //抽象構文木
 function Cons(type,car,cdr) {
-	//this.type = type;
+	this.type = type;
 	this.car = car;
 	this.cdr = cdr;
 }
 
+//ここから作成箇所
 function mylisp(line){
 	//字句解析
 	var Token = new Array();
@@ -44,38 +45,60 @@ function mylisp(line){
 				break;
 		}
 	}
-	if(p<line.length) Token.push(line.substring(p));
-	for(i=0; i<Token.length; i++){
+	if(p<line.length)
+		throw "\"()\"に入っていない字句があります";
+	/* for(i=0; i<Token.length; i++){
 		console.log("Token[" + i + "]:" + Token[i]);
 		if(Token[i]=="(") console.log(nest(i));
-	}
+	} */
 
 	//構文解析を書く場所
-	var cons;
-	for(i=0; i<Token.length; i++) if(Token[i]=="(") {
-		cons=createcons(i+1);
-		break;
+	var cons = new Array();
+	for(i=0; i<Token.length; i++){
+		if(Token[i]==")")
+			throw "\")\"に対応する\"(\"がありません";
+		if(Token[i]!="(")
+			throw "\"()\"に入っていない字句があります";
+		cons.push(createcons(i+1)); //"("の次の要素から開始
+		i=bracket(i);
 	}
-	console.log(cons);
-
+	//構文木を作る関数
 	function createcons(pos){
+		if(pos>=Token.length)
+			throw "\"(\"に対応する\")\"がありません";
 		switch(Token[pos]){
 			case ")":
 				return null;
 			case "(":
-				var temp = createcons(pos+1);
-				return new Cons(null,temp,createcons(nest(pos)+1));
+				return new Cons(null,createcons(pos+1),createcons(bracket(pos)+1));
 			default:
 				return new Cons(null,Token[pos],createcons(pos+1));
 		}
 	}
-	function nest(pos){
+	//"("の入っている要素を指定、対応する")"のある要素を返す
+	function bracket(pos){
 		var i;
 		for(i=pos+1; i<Token.length; i++){
-			if(Token[i]=="(") i=nest(i)+1;
 			if(Token[i]==")") return i;
+			if(Token[i]=="(") i=bracket(i);
 		}
-		return i;
+		return;
+	}
+
+	//評価を書く場所
+	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]));
+
+	//評価の関数
+	function evallisp(node){
+		if(node === void 0) return null;
+		switch(node.car){
+			case "+":
+				return evalplus(node.cdr);
+		}
+
+		function evalplus(node){
+			
+		}
 	}
 }
 
