@@ -169,28 +169,28 @@ function mylisp(line){
 			if(node==null) return true;
 			operand = getnumber(node);
 			if(greaterthanorequal(node.cdr,operand)==false) return false;
-			return value>operand;
+			return value>=operand;
 		}
 		function lessthan(node,value){
 			var operand;
 			if(node==null) return true;
 			operand = getnumber(node);
 			if(lessthan(node.cdr,operand)==false) return false;
-			return value>operand;
+			return value<operand;
 		}
 		function lessthanorequal(node,value){
 			var operand;
 			if(node==null) return true;
 			operand = getnumber(node);
 			if(lessthanorequal(node.cdr,operand)==false) return false;
-			return value>operand;
+			return value<=operand;
 		}
 		function equal(node,value){
 			var operand;
 			if(node==null) return true;
 			operand = getnumber(node);
 			if(equal(node.cdr,operand)==false) return false;
-			return value>operand;
+			return value==operand;
 		}
 		//car部分をnumberに処理して返す
 		function getnumber(node){
