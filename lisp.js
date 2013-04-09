@@ -112,7 +112,31 @@ function mylisp(line){
 			case ">":
 				if(node.cdr==null)
 					throw "演算子のオペランドがありません";
-				return (greater(node.cdr.cdr,getnumber(node.cdr))
+				return (greaterthan(node.cdr.cdr,getnumber(node.cdr))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case ">=":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return (greaterthanorequal(node.cdr.cdr,getnumber(node.cdr))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "<":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return (lessthan(node.cdr.cdr,getnumber(node.cdr))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "<=":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return (lessthanorequal(node.cdr.cdr,getnumber(node.cdr))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "=":
+				if(node.cdr==null)
+					throw "演算子のオペランドがありません";
+				return (equal(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			default:
@@ -133,11 +157,39 @@ function mylisp(line){
 		function divide(node){
 			return Math.floor(getnumber(node)/multiply(node.cdr));
 		}
-		function greater(node,value){
+		function greaterthan(node,value){
 			var operand;
 			if(node==null) return true;
 			operand = getnumber(node);
-			if(greater(node.cdr,operand)==false) return false;
+			if(greaterthan(node.cdr,operand)==false) return false;
+			return value>operand;
+		}
+		function greaterthanorequal(node,value){
+			var operand;
+			if(node==null) return true;
+			operand = getnumber(node);
+			if(greaterthanorequal(node.cdr,operand)==false) return false;
+			return value>operand;
+		}
+		function lessthan(node,value){
+			var operand;
+			if(node==null) return true;
+			operand = getnumber(node);
+			if(lessthan(node.cdr,operand)==false) return false;
+			return value>operand;
+		}
+		function lessthanorequal(node,value){
+			var operand;
+			if(node==null) return true;
+			operand = getnumber(node);
+			if(lessthanorequal(node.cdr,operand)==false) return false;
+			return value>operand;
+		}
+		function equal(node,value){
+			var operand;
+			if(node==null) return true;
+			operand = getnumber(node);
+			if(equal(node.cdr,operand)==false) return false;
 			return value>operand;
 		}
 		//car部分をnumberに処理して返す
