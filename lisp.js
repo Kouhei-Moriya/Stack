@@ -95,54 +95,74 @@ function mylisp(line){
 
 	//評価の関数
 	function evallisp(node){
-		if(node==null) return new Cons("boolean","Nil",null);
+		var param = parameters(node);
+		if(param==0) return new Cons("boolean","Nil",null);
+		switch(node.car){
+			case "-":
+			case "/":
+			case ">":
+			case ">=":
+			case "<":
+			case "<=":
+			case "=":
+				if(param<2)
+					throw "演算子のオペランドが足りません";
+				break;
+			case "if":
+				//(if x y)か(if x y z)の形である必要がある
+				if(param<3)
+					throw "IFのパラメータが足りません";
+				if(param>4)
+					throw "IFのパラメータが多すぎます";
+				break;
+		}
 		switch(node.car){
 			case "+":
 				return new Cons("number",add(node.cdr),null);
 			case "-":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return new Cons("number",subtract(node.cdr),null);
 			case "*":
 				return new Cons("number",multiply(node.cdr),null);
 			case "/":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return new Cons("number",divide(node.cdr),null);
 			case ">":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return (greaterthan(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case ">=":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return (greaterthanorequal(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "<":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return (lessthan(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "<=":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return (lessthanorequal(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "=":
-				if(node.cdr==null)
-					throw "演算子のオペランドがありません";
 				return (equal(node.cdr.cdr,getnumber(node.cdr))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
+			case "if":
+				if(getboolean(node.cdr)){
+					if(node.cdr.cdr.type=="object") return evallisp(node.cdr.cdr.car);
+					return new Cons(node.cdr.cdr.type, node.cdr.cdr.car, null);
+				}else{
+					if(node.cdr.cdr.cdr==null) return new Cons("boolean","Nil",null);
+					if(node.cdr.cdr.cdr.type=="object") return evallisp(node.cdr.cdr.cdr.car);
+					return new Cons(node.cdr.cdr.cdr.type, node.cdr.cdr.cdr.car, null);
+				}
 			default:
 				return;
 		}
 
+		//cdrで繋がっているノードの数を数える
+		function parameters(node){
+			if(node==null) return 0;
+			return 1+parameters(node.cdr);
+		}
 		function add(node){
 			if(node==null) return 0;
 			return getnumber(node)+add(node.cdr);
@@ -201,6 +221,20 @@ function mylisp(line){
 					return node.car;
 				default:
 					throw "\"" + node.car + "\"を数値として解釈できません";
+			}
+			return;
+		}
+		//car部分をbooleanに処理して返す
+		function getboolean(node){
+			switch(node.type){
+				case "object":
+					return getboolean(evallisp(node.car));
+				case "number":
+					return true;
+				case "boolean":
+					return node.car=="T";
+				default:
+					throw "\"" + node.car + "\"の真偽が判定できません";
 			}
 			return;
 		}
