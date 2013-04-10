@@ -79,8 +79,6 @@ function mylisp(line){
 		switch(type){
 			case "object":
 				return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
-			case "number":
-				return new Cons("number",parseInt(Token[pos]),createcons(pos+1));
 			default:
 				return new Cons(type,Token[pos],createcons(pos+1));
 		}
@@ -116,14 +114,13 @@ function mylisp(line){
 			case "defun":
 				return "reserved";
 			default:
-				if(isNaN(value)==false) return "number";
+				if(typeof value == "number") return "number";
 				if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
 		}
 		return "unknown";
 	}
 
 	//評価を書く場所
-	console.log(cons.length);
 	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]).car);
 
 	//評価の関数
