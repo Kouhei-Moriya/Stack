@@ -54,6 +54,9 @@ function mylisp(line){
 		if(Token[i]=="(") console.log(nest(i));
 	} */
 
+	//文字列扱いの数字をparseIntする
+	for(i=0; i<Token.length; i++) if(isNaN(Token[i])==false) Token[i]=parseInt(Token[i]);
+
 	//構文解析を書く場所
 	var cons = new Array();
 	for(i=0; i<Token.length; i++){
@@ -63,7 +66,8 @@ function mylisp(line){
 			cons.push(createcons(i+1)); //"("の次の要素から開始
 			i=bracket(i);
 		}else{		
-			throw "\"()\"に入っていない字句があります";
+			//throw "\"()\"に入っていない字句があります";
+			cons.push(new Cons("disp",null,new Cons(gettype(Token[i]),Token[i],null)));
 		}
 	}
 	//構文木を作る関数
@@ -119,6 +123,7 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
+	console.log(cons.length);
 	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]).car);
 
 	//評価の関数
@@ -129,8 +134,6 @@ function mylisp(line){
 			throw "パラメータの数が正しくありません";
 		if(node.type=="disp"){
 			switch(node.cdr.type){
-				case "object":
-					return evallisp(node.cdr.car);
 				case "number":
 				case "string":
 				case "boolean":
@@ -138,7 +141,7 @@ function mylisp(line){
 				case "unknown":
 					if(node.cdr.car in variable) return variable[node.cdr.car];
 				default:
-					throw node.cdr.car + " という関数・演算はありません";
+					throw node.cdr.car + " は値ではありません";
 			}
 		}
 		switch(node.car){
