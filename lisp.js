@@ -26,6 +26,9 @@ function Cons(type,car,cdr) {
 	this.cdr = cdr;
 }
 
+//変数
+var variable = {};
+
 //ここから作成箇所
 function mylisp(line){
 	//字句解析
@@ -45,8 +48,7 @@ function mylisp(line){
 				break;
 		}
 	}
-	if(p<line.length)
-		throw "\"()\"に入っていない字句があります";
+	if(p<line.length) Token.push(line.substring(p));
 	/* for(i=0; i<Token.length; i++){
 		console.log("Token[" + i + "]:" + Token[i]);
 		if(Token[i]=="(") console.log(nest(i));
@@ -57,27 +59,26 @@ function mylisp(line){
 	for(i=0; i<Token.length; i++){
 		if(Token[i]==")")
 			throw "\")\"に対応する\"(\"がありません";
-		if(Token[i]!="(")
+		if(Token[i]=="("){
+			cons.push(createcons(i+1)); //"("の次の要素から開始
+			i=bracket(i);
+		}else{		
 			throw "\"()\"に入っていない字句があります";
-		cons.push(createcons(i+1)); //"("の次の要素から開始
-		i=bracket(i);
+		}
 	}
 	//構文木を作る関数
 	function createcons(pos){
 		if(pos>=Token.length)
 			throw "\"(\"に対応する\")\"がありません";
-		switch(Token[pos]){
-			case ")":
-				return null;
-			case "(":
+		if(Token[pos]==")") return null;
+		var type = gettype(Token[pos]);
+		switch(type){
+			case "object":
 				return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
-			case "T":
-			case "Nil":
-				return new Cons("boolean",Token[pos],createcons(pos+1));
-			default:
-				if(isNaN(Token[pos])) return new Cons("string",Token[pos],createcons(pos+1));
+			case "number":
 				return new Cons("number",parseInt(Token[pos]),createcons(pos+1));
-
+			default:
+				return new Cons(type,Token[pos],createcons(pos+1));
 		}
 	}
 	//"("の入っている要素を指定、対応する")"のある要素を返す
@@ -89,33 +90,42 @@ function mylisp(line){
 		}
 		return;
 	}
-
-	//評価を書く場所
-	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]).car);
-
-	//評価の関数
-	function evallisp(node){
-		var param = parameters(node);
-		if(param==0) return new Cons("boolean","Nil",null);
-		switch(node.car){
+	//typeを取得する
+	function gettype(value){
+		switch(value){
+			case "(":
+				return "object";
+			case "T":
+			case "Nil":
+				return "boolean";
+			case "+":
 			case "-":
+			case "*":
 			case "/":
 			case ">":
 			case ">=":
 			case "<":
 			case "<=":
 			case "=":
-				if(param<2)
-					throw "演算子のオペランドが足りません";
-				break;
 			case "if":
-				//(if x y)か(if x y z)の形である必要がある
-				if(param<3)
-					throw "IFのパラメータが足りません";
-				if(param>4)
-					throw "IFのパラメータが多すぎます";
-				break;
+			case "setq":
+				return "operator";
+			default:
+				if(isNaN(value)==false) return "number";
+				if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
 		}
+		return "unknown";
+	}
+
+	//評価を書く場所
+	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]).car);
+
+	//評価の関数
+	function evallisp(node){
+		var key, value;
+		if(node==null) return new Cons("boolean","Nil",null);
+		if(checkparam(node)==false)
+			throw "パラメータの数が正しくありません";
 		switch(node.car){
 			case "+":
 				return new Cons("number",add(node.cdr),null);
@@ -147,22 +157,62 @@ function mylisp(line){
 					: new Cons("boolean","Nil",null));
 			case "if":
 				if(getboolean(node.cdr)){
-					if(node.cdr.cdr.type=="object") return evallisp(node.cdr.cdr.car);
-					return new Cons(node.cdr.cdr.type, node.cdr.cdr.car, null);
+					//真値
+					value = node.cdr.cdr;
 				}else{
-					if(node.cdr.cdr.cdr==null) return new Cons("boolean","Nil",null);
-					if(node.cdr.cdr.cdr.type=="object") return evallisp(node.cdr.cdr.cdr.car);
-					return new Cons(node.cdr.cdr.cdr.type, node.cdr.cdr.cdr.car, null);
+					//偽値
+					value = node.cdr.cdr.cdr;
+					if(value==null) return new Cons("boolean","Nil",null);
 				}
+				if(value.type=="object") return evallisp(value.car);
+				return new Cons(value.type, value.car, null);
+			case "setq":
+				if(node.cdr.type!="unknown")
+					throw "その語は変数として用いることができません";
+				
+				value = node.cdr.cdr;
+				if(value.type=="object") variable[node.cdr.car] = evallisp(value.car);
+				else variable[node.cdr.car] = new Cons(value.type, value.car, null);
+				return variable[node.cdr.car]
 			default:
 				return;
 		}
 
+		//パラメータの数が正しいかを調べる
+		function checkparam(node){
+			switch(node.car){
+				case "-":
+				case "/":
+				case ">":
+				case ">=":
+				case "<":
+				case "<=":
+				case "=":
+					if(parameters(node)<2) return false;
+					break;
+				case "if":
+					//(if x y)か(if x y z)の形である必要がある
+					switch(parameters(node)){
+						case 3:
+						case 4:
+							break;
+						default:
+							return false;
+					}
+					break;
+				case "setq":
+					if(parameters(node)!=3) return false;
+					break;
+			}
+			return true;
+	
+		}
 		//cdrで繋がっているノードの数を数える
 		function parameters(node){
 			if(node==null) return 0;
 			return 1+parameters(node.cdr);
 		}
+		//演算・比較
 		function add(node){
 			if(node==null) return 0;
 			return getnumber(node)+add(node.cdr);
@@ -219,8 +269,10 @@ function mylisp(line){
 					return getnumber(evallisp(node.car));
 				case "number":
 					return node.car;
+				case "unknown":
+					if(node.car in variable) return getnumber(variable[node.car]);
 				default:
-					throw "\"" + node.car + "\"を数値として解釈できません";
+					throw node.car + " を数値として解釈できません";
 			}
 			return;
 		}
@@ -229,12 +281,12 @@ function mylisp(line){
 			switch(node.type){
 				case "object":
 					return getboolean(evallisp(node.car));
-				case "number":
-					return true;
 				case "boolean":
-					return node.car=="T";
+					return node.car!="Nil";
+				case "unknown":
+					if(node.car in variable) return getboolean(variable[node.car]);
 				default:
-					throw "\"" + node.car + "\"の真偽が判定できません";
+					return true;
 			}
 			return;
 		}
