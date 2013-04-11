@@ -135,6 +135,8 @@ function getvalue(node, type){
 			case "boolean":
 				value = new Cons(node.type,node.car,null);
 				break;
+			case "argument":
+				//
 			case "unknown":
 				if(node.car in variable){
 					value = variable[node.car];
