@@ -85,17 +85,13 @@ function mylisp(line){
 	//評価を書く場所
 	for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
 
-}
-
-
-//構文解析用関数(引数がTokenの要素)
-//構文木を作る関数
-function createcons(pos){
-	if(pos>=Token.length)
-		throw "\"(\"に対応する\")\"がありません";
-	if(Token[pos]==")") return null;
-	if(Token[pos]=="(") return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
-	return new Cons(gettype(Token[pos]),Token[pos],createcons(pos+1));
+	//構文木を作る関数
+	function createcons(pos){
+		if(pos>=Token.length)
+			throw "\"(\"に対応する\")\"がありません";
+		if(Token[pos]==")") return null;
+		if(Token[pos]=="(") return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
+		return new Cons(gettype(Token[pos]),Token[pos],createcons(pos+1));
 }
 //"("の入っている要素を指定、対応する")"のある要素を返す
 function bracket(pos){
@@ -106,6 +102,10 @@ function bracket(pos){
 	}
 	return;
 }
+}
+
+
+//構文解析用関数(引数がTokenの要素)
 //carに入れる値を引数とし、入れるべきtypeを返す
 function gettype(value){
 	switch(value){
