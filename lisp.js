@@ -38,6 +38,9 @@ function Cons(type,car,cdr) {
 //変数
 var variable = {};
 
+//関数
+var func = {};
+
 //ここから作成箇所
 function mylisp(line){
 	//字句解析
@@ -122,7 +125,8 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
-	for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
+	for(i=0; i<cons.length; i++) console.log(isnest(cons[i]));
+	//for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
 
 	//値の表示
 	function getvalue(node){
@@ -149,7 +153,6 @@ function mylisp(line){
 
 	//評価の関数
 	function evallist(node){
-		var value;
 		if(node==null) return new Cons("boolean","Nil",null);
 		if(checkparam(node)==false)
 			throw "パラメータの数が正しくありません";
@@ -183,14 +186,22 @@ function mylisp(line){
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "if":
-				if(getvalue(node.cdr).car != "Nil") value = node.cdr.cdr;
-				else value = node.cdr.cdr.cdr;
-				return getvalue(value);
+				if(getvalue(node.cdr).car != "Nil") return getvalue(node.cdr.cdr);
+				return getvalue(node.cdr.cdr.cdr);
 			case "setq":
 				if(node.cdr.type!="unknown")
 					throw "その語は変数として用いることができません";
 				variable[node.cdr.car] = getvalue(node.cdr.cdr);
 				return variable[node.cdr.car];
+			case "defun":
+				if(node.cdr.type!="unknown")
+					throw "その語は関数として用いることができません";
+				if(node.cdr.cdr.type!="object")
+					throw "関数の引数がリストになっていません";
+				if(isnest(node.cdr.cdr.car))
+					throw "関数の引数リストに別のリストが入っています";
+				defun[node.cdr.car] = node.cdr.cdr.car;
+				return node.cdr.car;
 			default:
 				throw node.car + " という関数・演算はありません";
 				return;
@@ -199,6 +210,9 @@ function mylisp(line){
 		//パラメータの数が正しいかを調べる
 		function checkparam(node){
 			switch(node.car){
+				case "+":
+				case "*":
+					break;
 				case "-":
 				case "/":
 				case ">":
@@ -231,6 +245,12 @@ function mylisp(line){
 		function parameters(node){
 			if(node==null) return 0;
 			return 1+parameters(node.cdr);
+		}
+		//与えたリストのcarにリストが入っているならtrueを返す
+		function isnest(node){
+			if(node==null) return false;
+			if(node.type=="object") return true;
+			return isnest(node.car);
 		}
 		//演算・比較
 		function add(node){
