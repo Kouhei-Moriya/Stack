@@ -24,15 +24,6 @@ function Cons(type,car,cdr) {
 	this.type = type;
 	this.car = car;
 	this.cdr = cdr;
-	this.tonumber = function(){
-		if(this.type!="number")
-			throw this.car + " を数値として解釈できません";
-		this.car = parseInt(this.car);
-	}
-	this.toboolean = function(){
-		this.type = "boolean";
-		this.car = (this.car != "Nil");
-	}
 }
 
 //変数
@@ -85,6 +76,7 @@ function mylisp(line){
 	//評価を書く場所
 	for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
 
+	//構文解析用関数(引数がTokenの要素)
 	//構文木を作る関数
 	function createcons(pos){
 		if(pos>=Token.length)
@@ -92,20 +84,18 @@ function mylisp(line){
 		if(Token[pos]==")") return null;
 		if(Token[pos]=="(") return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
 		return new Cons(gettype(Token[pos]),Token[pos],createcons(pos+1));
-}
-//"("の入っている要素を指定、対応する")"のある要素を返す
-function bracket(pos){
-	var i;
-	for(i=pos+1; i<Token.length; i++){
-		if(Token[i]==")") return i;
-		if(Token[i]=="(") i=bracket(i);
 	}
-	return;
-}
+	//"("の入っている要素を指定、対応する")"のある要素を返す
+	function bracket(pos){
+		var i;
+		for(i=pos+1; i<Token.length; i++){
+			if(Token[i]==")") return i;
+			if(Token[i]=="(") i=bracket(i);
+		}
+		return;
+	}
 }
 
-
-//構文解析用関数(引数がTokenの要素)
 //carに入れる値を引数とし、入れるべきtypeを返す
 function gettype(value){
 	switch(value){
@@ -131,7 +121,6 @@ function gettype(value){
 	}
 	return "unknown";
 }
-
 //評価用の関数(引数が構文木)
 //値の評価
 function getvalue(node){
@@ -164,7 +153,7 @@ function parameters(node){
 function isnest(node){
 	if(node==null) return false;
 	if(node.type=="object") return true;
-	return isnest(node.car);
+	return isnest(node.cdr);
 }
 //演算の実行
 function evallist(node){
