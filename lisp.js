@@ -63,11 +63,10 @@ function mylisp(line){
 		if(Token[i]==")")
 			throw "\")\"に対応する\"(\"がありません";
 		if(Token[i]=="("){
-			cons.push(createcons(i+1)); //"("の次の要素から開始
+			cons.push(new Cons("object",createcons(i+1),null));
 			i=bracket(i);
 		}else{		
-			//throw "\"()\"に入っていない字句があります";
-			cons.push(new Cons("disp",null,new Cons(gettype(Token[i]),Token[i],null)));
+			cons.push(new Cons(gettype(Token[i]),Token[i],null));
 		}
 	}
 	//構文木を作る関数
@@ -121,26 +120,30 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
-	for(i=0; i<cons.length; i++) console.log(evallisp(cons[i]).car);
+	for(i=0; i<cons.length; i++) console.log(disp(cons[i]).car);
+
+	//値の表示
+	function disp(node){
+		switch(node.type){
+			case "object":
+				return evallist(node.car);
+			case "number":
+			case "string":
+			case "boolean":
+				return new Cons(node.type,node.car,null);
+			case "unknown":
+				if(node.car in variable) return variable[node.car];
+			default:
+				throw node.car + " は値ではありません";
+			}
+	}
 
 	//評価の関数
-	function evallisp(node){
+	function evallist(node){
 		var value;
 		if(node==null) return new Cons("boolean","Nil",null);
 		if(checkparam(node)==false)
 			throw "パラメータの数が正しくありません";
-		if(node.type=="disp"){
-			switch(node.cdr.type){
-				case "number":
-				case "string":
-				case "boolean":
-					return new Cons(node.cdr.type,node.cdr.car,null);
-				case "unknown":
-					if(node.cdr.car in variable) return variable[node.cdr.car];
-				default:
-					throw node.cdr.car + " は値ではありません";
-			}
-		}
 		switch(node.car){
 			case "+":
 				return new Cons("number",add(node.cdr),null);
@@ -179,15 +182,14 @@ function mylisp(line){
 					value = node.cdr.cdr.cdr;
 					if(value==null) return new Cons("boolean","Nil",null);
 				}
-				if(value.type=="object") return evallisp(value.car);
+				if(value.type=="object") return evallist(value.car);
 				return new Cons(value.type, value.car, null);
 			case "setq":
 				if(node.cdr.type!="unknown")
 					throw "その語は変数として用いることができません";
-				value = node.cdr.cdr;
-				if(node.cdr.cdr.type=="object") variable[node.cdr.car] = evallisp(node.cdr.cdr.car);
+				if(node.cdr.cdr.type=="object") variable[node.cdr.car] = evallist(node.cdr.cdr.car);
 				else variable[node.cdr.car] = new Cons(node.cdr.cdr.type, node.cdr.cdr.car, null);
-				return variable[node.cdr.car]
+				return variable[node.cdr.car];
 			default:
 				throw node.car + " という関数・演算はありません";
 				return;
@@ -283,7 +285,7 @@ function mylisp(line){
 		function getnumber(node){
 			switch(node.type){
 				case "object":
-					return getnumber(evallisp(node.car));
+					return getnumber(evallist(node.car));
 				case "number":
 					return node.car;
 				case "unknown":
@@ -297,7 +299,7 @@ function mylisp(line){
 		function getboolean(node){
 			switch(node.type){
 				case "object":
-					return getboolean(evallisp(node.car));
+					return getboolean(evallist(node.car));
 				case "boolean":
 					return node.car!="Nil";
 				case "unknown":
