@@ -122,27 +122,39 @@ function gettype(value){
 	return "unknown";
 }
 //評価用の関数(引数が構文木)
-//値の評価
-function getvalue(node){
-	if(node==null) return new Cons("boolean","Nil",null);
-	switch(node.type){
-		case "object":
-			return evallist(node.car);
-		case "number":
-		case "string":
-		case "boolean":
-			return new Cons(node.type,node.car,null);
-		case "unknown":
-			if(node.car in variable) return variable[node.car];
-		default:
-			throw node.car + " は値ではありません";
+//値の評価(typeで型を指定)
+function getvalue(node, type){
+	var value = new Cons("boolean","Nil",null);
+	if(node!=null){
+		 switch(node.type){
+			case "object":
+				value = evallist(node.car);
+				break;
+			case "number":
+			case "string":
+			case "boolean":
+				value = new Cons(node.type,node.car,null);
+				break;
+			case "unknown":
+				if(node.car in variable){
+					value = variable[node.car];
+					break;
+				}
+			default:
+				throw node.car + " は値ではありません";
+		}
 	}
-}
-//car部分がnumberならそれを返す
-function tonumber(node){
-	if(node.type!="number")
-		throw node.car + " を数値として解釈できません";
-	return node.car;
+	switch(type){
+		case "number":
+			if(value.type!="number")
+				throw value.car + " を数値として解釈できません";
+			return value.car;
+		case "boolean":
+			return value.car != "Nil";
+		case "object":
+		default:
+			return value;
+	}
 }
 //cdrで繋がっているノードの数を数える
 function parameters(node){
@@ -170,27 +182,27 @@ function evallist(node){
 		case "/":
 			return new Cons("number",divide(node.cdr),null);
 		case ">":
-			return (greaterthan(node.cdr.cdr,tonumber(getvalue(node.cdr)))
+			return (greaterthan(node.cdr.cdr,getvalue(node.cdr,"number"))
 				? new Cons("boolean","T",null)
 				: new Cons("boolean","Nil",null));
 		case ">=":
-			return (greaterthanorequal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
+			return (greaterthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
 				? new Cons("boolean","T",null)
 				: new Cons("boolean","Nil",null));
 		case "<":
-			return (lessthan(node.cdr.cdr,tonumber(getvalue(node.cdr)))
+			return (lessthan(node.cdr.cdr,getvalue(node.cdr,"number"))
 				? new Cons("boolean","T",null)
 				: new Cons("boolean","Nil",null));
 		case "<=":
-			return (lessthanorequal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
+			return (lessthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
 				? new Cons("boolean","T",null)
 				: new Cons("boolean","Nil",null));
 		case "=":
-			return (equal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
+			return (equal(node.cdr.cdr,getvalue(node.cdr,"number"))
 				? new Cons("boolean","T",null)
 				: new Cons("boolean","Nil",null));
 		case "if":
-			if(getvalue(node.cdr).car != "Nil") return getvalue(node.cdr.cdr);
+			if(getvalue(node.cdr, "boolean")) return getvalue(node.cdr.cdr);
 			return getvalue(node.cdr.cdr.cdr);
 		case "setq":
 			if(node.cdr.type!="unknown")
@@ -248,50 +260,50 @@ function evallist(node){
 //演算・比較の処理を行う関数群
 function add(node){
 	if(node==null) return 0;
-	return tonumber(getvalue(node))+add(node.cdr);
+	return getvalue(node,"number")+add(node.cdr);
 }
 function subtract(node){
-	return tonumber(getvalue(node))-add(node.cdr);
+	return getvalue(node,"number")-add(node.cdr);
 }
 function multiply(node){
 	if(node==null) return 1;
-	return tonumber(getvalue(node))*multiply(node.cdr);
+	return getvalue(node,"number")*multiply(node.cdr);
 }
 function divide(node){
-	return Math.floor(tonumber(getvalue(node))/multiply(node.cdr));
+	return Math.floor(getvalue(node,"number")/multiply(node.cdr));
 }
 function greaterthan(node,value){
 	var operand;
 	if(node==null) return true;
-	operand = tonumber(getvalue(node));
+	operand = getvalue(node,"number");
 	if(greaterthan(node.cdr,operand)==false) return false;
 	return value>operand;
 }
 function greaterthanorequal(node,value){
 	var operand;
 	if(node==null) return true;
-	operand = tonumber(getvalue(node));
+	operand = getvalue(node,"number");
 	if(greaterthanorequal(node.cdr,operand)==false) return false;
 	return value>=operand;
 }
 function lessthan(node,value){
 	var operand;
 	if(node==null) return true;
-	operand = tonumber(getvalue(node));
+	operand = getvalue(node,"number");
 	if(lessthan(node.cdr,operand)==false) return false;
 	return value<operand;
 }
 function lessthanorequal(node,value){
 	var operand;
 	if(node==null) return true;
-	operand = tonumber(getvalue(node));
+	operand = getvalue(node,"number");
 	if(lessthanorequal(node.cdr,operand)==false) return false;
 	return value<=operand;
 }
 function equal(node,value){
 	var operand;
 	if(node==null) return true;
-	operand = tonumber(getvalue(node));
+	operand = getvalue(node,"number");
 	if(equal(node.cdr,operand)==false) return false;
 	return value==operand;
 }
