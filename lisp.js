@@ -216,9 +216,13 @@ function evallist(node){
 				throw "関数の引数がリストになっていません";
 			if(isnest(node.cdr.cdr.car))
 				throw "関数の引数リストに別のリストが入っています";
-			defun[node.cdr.car] = node.cdr.cdr.car;
+			//node.cdr.cdr.carは引数のリスト
+			func[node.cdr.car] = node.cdr.cdr.cdr.car;
 			return node.cdr.car;
 		default:
+			if(node.type=="unknown" && node.car in func){
+				return getvalue(func[node.car]);
+			}
 			throw node.car + " という関数・演算はありません";
 			return;
 	}
