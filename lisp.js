@@ -161,12 +161,6 @@ function parameters(node){
 	if(node==null) return 0;
 	return 1+parameters(node.cdr);
 }
-//与えたリストのcarにリストが入っているならtrueを返す
-function isnest(node){
-	if(node==null) return false;
-	if(node.type=="object") return true;
-	return isnest(node.cdr);
-}
 //演算の実行
 function evallist(node){
 	if(node==null) return new Cons("boolean","Nil",null);
@@ -214,11 +208,9 @@ function evallist(node){
 				throw "その語は関数として用いることができません";
 			if(node.cdr.cdr.type!="object")
 				throw "関数の引数がリストになっていません";
-			if(isnest(node.cdr.cdr.car))
-				throw "関数の引数リストに別のリストが入っています";
 			//node.cdr.cdr.carは引数のリスト
-			func[node.cdr.car] = node.cdr.cdr.cdr.car;
-			return node.cdr.car;
+			func[node.cdr.car] = setfunc(node.cdr.cdr.car,node.cdr.cdr.cdr);
+			return new Cons("unknown",node.cdr.car,null);
 		default:
 			if(node.type=="unknown" && node.car in func){
 				return getvalue(func[node.car]);
@@ -310,5 +302,29 @@ function equal(node,value){
 	operand = getvalue(node,"number");
 	if(equal(node.cdr,operand)==false) return false;
 	return value==operand;
+}
+function setfunc(arg,formula){
+	var arglist = {}, i = 0;
+	getarglist(arg);
+	return setformula(formula);
+
+	function getarglist(node){
+		if(node==null) return;
+		if(node.type=="object")
+			throw "引数リストの中にリストが含まれています";
+		if(node.type!="unknown")
+			throw "その語は引数として用いることができません";
+		if(node.car in arglist)
+			throw "同じ文字の引数が2つ以上あります";
+		arglist[node.car] = i;
+		i++;
+		getarglist(node.cdr);
+	}
+	function setformula(node){
+		if(node==null) return null;
+		if(node.type=="object") return new Cons("object", setformula(node.car), setformula(node.cdr));
+		if(node.car in arglist) return new Cons("argument", arglist[node.car], setformula(node.cdr));
+		return new Cons(node.type, node.car, setformula(node.cdr));
+	}
 }
 
