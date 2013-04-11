@@ -24,6 +24,15 @@ function Cons(type,car,cdr) {
 	this.type = type;
 	this.car = car;
 	this.cdr = cdr;
+	this.tonumber = function(){
+		if(this.type!="number")
+			throw this.car + " を数値として解釈できません";
+		this.car = parseInt(this.car);
+	}
+	this.toboolean = function(){
+		this.type = "boolean";
+		this.car = (this.car != "Nil");
+	}
 }
 
 //変数
@@ -74,13 +83,8 @@ function mylisp(line){
 		if(pos>=Token.length)
 			throw "\"(\"に対応する\")\"がありません";
 		if(Token[pos]==")") return null;
-		var type = gettype(Token[pos]);
-		switch(type){
-			case "object":
-				return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
-			default:
-				return new Cons(type,Token[pos],createcons(pos+1));
-		}
+		if(Token[pos]=="(") return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
+		return new Cons(gettype(Token[pos]),Token[pos],createcons(pos+1));
 	}
 	//"("の入っている要素を指定、対応する")"のある要素を返す
 	function bracket(pos){
@@ -94,8 +98,6 @@ function mylisp(line){
 	//typeを取得する
 	function gettype(value){
 		switch(value){
-			case "(":
-				return "object";
 			case "T":
 			case "Nil":
 				return "boolean";
@@ -120,10 +122,11 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
-	for(i=0; i<cons.length; i++) console.log(disp(cons[i]).car);
+	for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
 
 	//値の表示
-	function disp(node){
+	function getvalue(node){
+		if(node==null) return new Cons("boolean","Nil",null);
 		switch(node.type){
 			case "object":
 				return evallist(node.car);
@@ -135,7 +138,13 @@ function mylisp(line){
 				if(node.car in variable) return variable[node.car];
 			default:
 				throw node.car + " は値ではありません";
-			}
+		}
+	}
+	//car部分がnumberなら返す
+	function tonumber(node){
+		if(node.type!="number")
+			throw node.car + " を数値として解釈できません";
+		return node.car;
 	}
 
 	//評価の関数
@@ -154,41 +163,33 @@ function mylisp(line){
 			case "/":
 				return new Cons("number",divide(node.cdr),null);
 			case ">":
-				return (greaterthan(node.cdr.cdr,getnumber(node.cdr))
+				return (greaterthan(node.cdr.cdr,tonumber(getvalue(node.cdr)))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case ">=":
-				return (greaterthanorequal(node.cdr.cdr,getnumber(node.cdr))
+				return (greaterthanorequal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "<":
-				return (lessthan(node.cdr.cdr,getnumber(node.cdr))
+				return (lessthan(node.cdr.cdr,tonumber(getvalue(node.cdr)))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "<=":
-				return (lessthanorequal(node.cdr.cdr,getnumber(node.cdr))
+				return (lessthanorequal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "=":
-				return (equal(node.cdr.cdr,getnumber(node.cdr))
+				return (equal(node.cdr.cdr,tonumber(getvalue(node.cdr)))
 					? new Cons("boolean","T",null)
 					: new Cons("boolean","Nil",null));
 			case "if":
-				if(getboolean(node.cdr)){
-					//真値
-					value = node.cdr.cdr;
-				}else{
-					//偽値
-					value = node.cdr.cdr.cdr;
-					if(value==null) return new Cons("boolean","Nil",null);
-				}
-				if(value.type=="object") return evallist(value.car);
-				return new Cons(value.type, value.car, null);
+				if(getvalue(node.cdr).car != "Nil") value = node.cdr.cdr;
+				else value = node.cdr.cdr.cdr;
+				return getvalue(value);
 			case "setq":
 				if(node.cdr.type!="unknown")
 					throw "その語は変数として用いることができません";
-				if(node.cdr.cdr.type=="object") variable[node.cdr.car] = evallist(node.cdr.cdr.car);
-				else variable[node.cdr.car] = new Cons(node.cdr.cdr.type, node.cdr.cdr.car, null);
+				variable[node.cdr.car] = getvalue(node.cdr.cdr);
 				return variable[node.cdr.car];
 			default:
 				throw node.car + " という関数・演算はありません";
@@ -234,80 +235,52 @@ function mylisp(line){
 		//演算・比較
 		function add(node){
 			if(node==null) return 0;
-			return getnumber(node)+add(node.cdr);
+			return tonumber(getvalue(node))+add(node.cdr);
 		}
 		function subtract(node){
-			return getnumber(node)-add(node.cdr);
+			return tonumber(getvalue(node))-add(node.cdr);
 		}
 		function multiply(node){
 			if(node==null) return 1;
-			return getnumber(node)*multiply(node.cdr);
+			return tonumber(getvalue(node))*multiply(node.cdr);
 		}
 		function divide(node){
-			return Math.floor(getnumber(node)/multiply(node.cdr));
+			return Math.floor(tonumber(getvalue(node))/multiply(node.cdr));
 		}
 		function greaterthan(node,value){
 			var operand;
 			if(node==null) return true;
-			operand = getnumber(node);
+			operand = tonumber(getvalue(node));
 			if(greaterthan(node.cdr,operand)==false) return false;
 			return value>operand;
 		}
 		function greaterthanorequal(node,value){
 			var operand;
 			if(node==null) return true;
-			operand = getnumber(node);
+			operand = tonumber(getvalue(node));
 			if(greaterthanorequal(node.cdr,operand)==false) return false;
 			return value>=operand;
 		}
 		function lessthan(node,value){
 			var operand;
 			if(node==null) return true;
-			operand = getnumber(node);
+			operand = tonumber(getvalue(node));
 			if(lessthan(node.cdr,operand)==false) return false;
 			return value<operand;
 		}
 		function lessthanorequal(node,value){
 			var operand;
 			if(node==null) return true;
-			operand = getnumber(node);
+			operand = tonumber(getvalue(node));
 			if(lessthanorequal(node.cdr,operand)==false) return false;
 			return value<=operand;
 		}
 		function equal(node,value){
 			var operand;
 			if(node==null) return true;
-			operand = getnumber(node);
+			operand = tonumber(getvalue(node));
 			if(equal(node.cdr,operand)==false) return false;
 			return value==operand;
-		}
-		//car部分をnumberに処理して返す
-		function getnumber(node){
-			switch(node.type){
-				case "object":
-					return getnumber(evallist(node.car));
-				case "number":
-					return node.car;
-				case "unknown":
-					if(node.car in variable) return getnumber(variable[node.car]);
-				default:
-					throw node.car + " を数値として解釈できません";
-			}
-			return;
-		}
-		//car部分をbooleanに処理して返す
-		function getboolean(node){
-			switch(node.type){
-				case "object":
-					return getboolean(evallist(node.car));
-				case "boolean":
-					return node.car!="Nil";
-				case "unknown":
-					if(node.car in variable) return getboolean(variable[node.car]);
-				default:
-					return true;
-			}
-			return;
 		}
 	}
 }
