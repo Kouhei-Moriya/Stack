@@ -97,10 +97,7 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
-	for(i=0; i<consroot.length; i++) {
-		console.log("loop:"+i);
-		console.log(getvalue(consroot[i]).car);
-	}
+	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
 	return;
 
 	//構文解析用関数(引数がTokenの要素)
