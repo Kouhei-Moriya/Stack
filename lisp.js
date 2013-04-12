@@ -169,7 +169,7 @@ function checkparam(node){
 function getvalue(node, type){
 	var value = new Cons("boolean","Nil",null);
 	if(node!=null){
-		 switch(node.type){
+		 typecase: switch(node.type){
 			case "object":
 				value = evallist(node.car);
 				break;
@@ -179,10 +179,11 @@ function getvalue(node, type){
 				value = new Cons(node.type,node.car,null);
 				break;
 			case "unknown":
-				if(node.car in argument[0]){
-					value = argument[0][node.car];
-					break;
-				}else if(node.car in variable){
+				for(i=0; i<argument.length; i++) if(node.car in argument[i]){
+					value = argument[i][node.car];
+					break typecase;
+				}
+				if(node.car in variable){
 					value = variable[node.car];
 					break;
 				}
@@ -204,6 +205,7 @@ function getvalue(node, type){
 }
 //演算の実行
 function evallist(node){
+	var temp;
 	if(node==null) return new Cons("boolean","Nil",null);
 	if(checkparam(node)==false)
 		throw "パラメータの数が正しくありません";
@@ -258,7 +260,9 @@ function evallist(node){
 			//func[xxx].carは引数の形式,func[xxx].cdrは関数の式,node.cdrは引数の値
 			if(node.type=="unknown" && node.car in func){
 				argument.unshift(setarg(func[node.car].car,node.cdr));
-				return getvalue(func[node.car].cdr);
+				temp = getvalue(func[node.car].cdr);
+				argument.shift();
+				return temp;
 			}
 			if(node.type=="object")
 				throw "関数・演算名にリストを用いることはできません"
@@ -318,7 +322,8 @@ function equal(node,value){
 }
 /*formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木
   valueを与えない場合はformに与えた形式が正常かをチェックする
-  valueを与えた場合は引数を連想配列に代入 */
+  valueを与えた場合は引数を連想配列に代入
+  defは一つ前のネストでの引数連想配列のコピー */
 function setarg(form, value){
 	var arglist = {};
 	if(value==null) setargform(form);
