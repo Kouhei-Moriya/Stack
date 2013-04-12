@@ -122,42 +122,6 @@ function gettype(value){
 	return "unknown";
 }
 //評価用の関数(引数が構文木)
-//値の評価(typeで型を指定)
-function getvalue(node, type){
-	var value = new Cons("boolean","Nil",null);
-	if(node!=null){
-		 switch(node.type){
-			case "object":
-				value = evallist(node.car);
-				break;
-			case "number":
-			case "string":
-			case "boolean":
-				value = new Cons(node.type,node.car,null);
-				break;
-			case "argument":
-				//
-			case "unknown":
-				if(node.car in variable){
-					value = variable[node.car];
-					break;
-				}
-			default:
-				throw node.car + " は値ではありません";
-		}
-	}
-	switch(type){
-		case "number":
-			if(value.type!="number")
-				throw value.car + " を数値として解釈できません";
-			return value.car;
-		case "boolean":
-			return value.car != "Nil";
-		case "object":
-		default:
-			return value;
-	}
-}
 //cdrで繋がっているノードの数を数える
 function parameters(node){
 	if(node==null) return 0;
@@ -196,118 +160,156 @@ function checkparam(node){
 	}
 	return true;
 }
-//演算の実行
-function evallist(node){
-	if(node==null) return new Cons("boolean","Nil",null);
-	if(checkparam(node)==false)
-		throw "パラメータの数が正しくありません";
-	switch(node.car){
-		case "+":
-			return new Cons("number",add(node.cdr),null);
-		case "-":
-			return new Cons("number",subtract(node.cdr),null);
-		case "*":
-			return new Cons("number",multiply(node.cdr),null);
-		case "/":
-			return new Cons("number",divide(node.cdr),null);
-		case ">":
-			return (greaterthan(node.cdr.cdr,getvalue(node.cdr,"number"))
-				? new Cons("boolean","T",null)
-				: new Cons("boolean","Nil",null));
-		case ">=":
-			return (greaterthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
-				? new Cons("boolean","T",null)
-				: new Cons("boolean","Nil",null));
-		case "<":
-			return (lessthan(node.cdr.cdr,getvalue(node.cdr,"number"))
-				? new Cons("boolean","T",null)
-				: new Cons("boolean","Nil",null));
-		case "<=":
-			return (lessthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
-				? new Cons("boolean","T",null)
-				: new Cons("boolean","Nil",null));
-		case "=":
-			return (equal(node.cdr.cdr,getvalue(node.cdr,"number"))
-				? new Cons("boolean","T",null)
-				: new Cons("boolean","Nil",null));
-		case "if":
-			if(getvalue(node.cdr, "boolean")) return getvalue(node.cdr.cdr);
-			return getvalue(node.cdr.cdr.cdr);
-		case "setq":
-			if(node.cdr.type!="unknown")
-				throw "その語は変数として用いることができません";
-			variable[node.cdr.car] = getvalue(node.cdr.cdr);
-			return variable[node.cdr.car];
-		case "defun":
-			if(node.cdr.type!="unknown")
-				throw "その語は関数として用いることができません";
-			if(node.cdr.cdr.type!="object")
-				throw "関数の引数がリストになっていません";
-			//node.cdr.cdr.carは引数のリスト
-			func[node.cdr.car] = setfunc(node.cdr.cdr.car,node.cdr.cdr.cdr);
-			return new Cons("unknown",node.cdr.car,null);
+//値の評価(typeで型を指定)
+function getvalue(node, type){
+	var value = new Cons("boolean","Nil",null);
+	var argument;
+	if(node!=null){
+		 switch(node.type){
+			case "object":
+				value = evallist(node.car);
+				break;
+			case "number":
+			case "string":
+			case "boolean":
+				value = new Cons(node.type,node.car,null);
+				break;
+			case "argument":
+				//
+			case "unknown":
+				if(node.car in variable){
+					value = variable[node.car];
+					break;
+				}
+			default:
+				throw node.car + " は値ではありません";
+		}
+	}
+	switch(type){
+		case "number":
+			if(value.type!="number")
+				throw value.car + " を数値として解釈できません";
+			return value.car;
+		case "boolean":
+			return value.car != "Nil";
+		case "object":
 		default:
-			if(node.type=="unknown" && node.car in func){
-				return getvalue(func[node.car]);
-			}
-			throw node.car + " という関数・演算はありません";
-			return;
+			return value;
+	}
+
+	//演算の実行
+	function evallist(node){
+		if(node==null) return new Cons("boolean","Nil",null);
+		if(checkparam(node)==false)
+			throw "パラメータの数が正しくありません";
+		switch(node.car){
+			case "+":
+				return new Cons("number",add(node.cdr),null);
+			case "-":
+				return new Cons("number",subtract(node.cdr),null);
+			case "*":
+				return new Cons("number",multiply(node.cdr),null);
+			case "/":
+				return new Cons("number",divide(node.cdr),null);
+			case ">":
+				return (greaterthan(node.cdr.cdr,getvalue(node.cdr,"number"))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case ">=":
+				return (greaterthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "<":
+				return (lessthan(node.cdr.cdr,getvalue(node.cdr,"number"))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "<=":
+				return (lessthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "=":
+				return (equal(node.cdr.cdr,getvalue(node.cdr,"number"))
+					? new Cons("boolean","T",null)
+					: new Cons("boolean","Nil",null));
+			case "if":
+				if(getvalue(node.cdr, "boolean")) return getvalue(node.cdr.cdr);
+				return getvalue(node.cdr.cdr.cdr);
+			case "setq":
+				if(node.cdr.type!="unknown")
+					throw "その語は変数として用いることができません";
+				variable[node.cdr.car] = getvalue(node.cdr.cdr);
+				return variable[node.cdr.car];
+			case "defun":
+				if(node.cdr.type!="unknown")
+					throw "その語は関数として用いることができません";
+				func[node.cdr.car] = setfunc(node.cdr.cdr);
+				return new Cons("unknown",node.cdr.car,null);
+			default:
+				if(node.type=="unknown" && node.car in func){
+					return getvalue(func[node.car]);
+				}
+				throw node.car + " という関数・演算はありません";
+				return;
+		}
+	}
+	//演算・比較の処理を行う関数群
+	function add(node){
+		if(node==null) return 0;
+		return getvalue(node,"number")+add(node.cdr);
+	}
+	function subtract(node){
+		return getvalue(node,"number")-add(node.cdr);
+	}
+	function multiply(node){
+		if(node==null) return 1;
+		return getvalue(node,"number")*multiply(node.cdr);
+	}
+	function divide(node){
+		return Math.floor(getvalue(node,"number")/multiply(node.cdr));
+	}
+	function greaterthan(node,value){
+		var operand;
+		if(node==null) return true;
+		operand = getvalue(node,"number");
+		if(greaterthan(node.cdr,operand)==false) return false;
+		return value>operand;
+	}
+	function greaterthanorequal(node,value){
+		var operand;
+		if(node==null) return true;
+		operand = getvalue(node,"number");
+		if(greaterthanorequal(node.cdr,operand)==false) return false;
+		return value>=operand;
+	}
+	function lessthan(node,value){
+		var operand;
+		if(node==null) return true;
+		operand = getvalue(node,"number");
+		if(lessthan(node.cdr,operand)==false) return false;
+		return value<operand;
+	}
+	function lessthanorequal(node,value){
+		var operand;
+		if(node==null) return true;
+		operand = getvalue(node,"number");
+		if(lessthanorequal(node.cdr,operand)==false) return false;
+		return value<=operand;
+	}
+	function equal(node,value){
+		var operand;
+		if(node==null) return true;
+		operand = getvalue(node,"number");
+		if(equal(node.cdr,operand)==false) return false;
+		return value==operand;
 	}
 }
-//演算・比較の処理を行う関数群
-function add(node){
-	if(node==null) return 0;
-	return getvalue(node,"number")+add(node.cdr);
-}
-function subtract(node){
-	return getvalue(node,"number")-add(node.cdr);
-}
-function multiply(node){
-	if(node==null) return 1;
-	return getvalue(node,"number")*multiply(node.cdr);
-}
-function divide(node){
-	return Math.floor(getvalue(node,"number")/multiply(node.cdr));
-}
-function greaterthan(node,value){
-	var operand;
-	if(node==null) return true;
-	operand = getvalue(node,"number");
-	if(greaterthan(node.cdr,operand)==false) return false;
-	return value>operand;
-}
-function greaterthanorequal(node,value){
-	var operand;
-	if(node==null) return true;
-	operand = getvalue(node,"number");
-	if(greaterthanorequal(node.cdr,operand)==false) return false;
-	return value>=operand;
-}
-function lessthan(node,value){
-	var operand;
-	if(node==null) return true;
-	operand = getvalue(node,"number");
-	if(lessthan(node.cdr,operand)==false) return false;
-	return value<operand;
-}
-function lessthanorequal(node,value){
-	var operand;
-	if(node==null) return true;
-	operand = getvalue(node,"number");
-	if(lessthanorequal(node.cdr,operand)==false) return false;
-	return value<=operand;
-}
-function equal(node,value){
-	var operand;
-	if(node==null) return true;
-	operand = getvalue(node,"number");
-	if(equal(node.cdr,operand)==false) return false;
-	return value==operand;
-}
-function setfunc(arg,formula){
+function setfunc(node){
+	if(node.type!="object")
+		throw "関数の引数がリストになっていません";
+	//node.carは引数のリスト,node.cdrは関数の式
 	var arglist = {}, i = 0;
-	getarglist(arg);
-	return setformula(formula);
+	getarglist(node.car);
+	return setformula(node.cdr);
 
 	function getarglist(node){
 		if(node==null) return;
