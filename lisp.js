@@ -158,9 +158,7 @@ function checkparam(node){
 			if(parameters(node)!=3) return false;
 			break;
 		default:
-			if(node.type=="unknown" && node.car in func){
-				if(parameters(func[node.car].car)==parameters(node)) return false;
-			}
+			if(node.type=="unknown" && node.car in func && parameters(func[node.car].car)!=parameters(node.cdr)) return false;
 			break;
 	}
 	return true;
