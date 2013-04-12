@@ -26,9 +26,9 @@ function Cons(type,car,cdr) {
 	this.cdr = cdr;
 }
 
+//全体で使う領域群
 //変数
 var variable = {};
-
 //関数
 var func = {};
 
@@ -61,20 +61,20 @@ function mylisp(line){
 	for(i=0; i<Token.length; i++) if(isNaN(Token[i])==false) Token[i]=parseInt(Token[i]);
 
 	//構文解析を書く場所
-	var cons = new Array();
+	var consroot = new Array();
 	for(i=0; i<Token.length; i++){
 		if(Token[i]==")")
 			throw "\")\"に対応する\"(\"がありません";
 		if(Token[i]=="("){
-			cons.push(new Cons("object",createcons(i+1),null));
+			consroot.push(new Cons("object",createcons(i+1),null));
 			i=bracket(i);
 		}else{		
-			cons.push(new Cons(gettype(Token[i]),Token[i],null));
+			consroot.push(new Cons(gettype(Token[i]),Token[i],null));
 		}
 	}
 
 	//評価を書く場所
-	for(i=0; i<cons.length; i++) console.log(getvalue(cons[i]).car);
+	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
 
 	//構文解析用関数(引数がTokenの要素)
 	//構文木を作る関数
@@ -163,6 +163,39 @@ function parameters(node){
 	if(node==null) return 0;
 	return 1+parameters(node.cdr);
 }
+//パラメータの数が正しいかを調べる
+function checkparam(node){
+	switch(node.car){
+		case "+":
+		case "*":
+			break;
+		case "-":
+		case "/":
+		case ">":
+		case ">=":
+		case "<":
+		case "<=":
+		case "=":
+			if(parameters(node)<2) return false;
+			break;
+		case "if":
+		case "defun":
+			//ifは(if x y)か(if x y z)の形である必要がある
+			//defunは(defun a (x))か(defun a (x) (y))の形である必要がある
+			switch(parameters(node)){
+				case 3:
+				case 4:
+					break;
+				default:
+					return false;
+			}
+			break;
+		case "setq":
+			if(parameters(node)!=3) return false;
+			break;
+	}
+	return true;
+}
 //演算の実行
 function evallist(node){
 	if(node==null) return new Cons("boolean","Nil",null);
@@ -219,40 +252,6 @@ function evallist(node){
 			}
 			throw node.car + " という関数・演算はありません";
 			return;
-	}
-	//パラメータの数が正しいかを調べる
-	function checkparam(node){
-		switch(node.car){
-			case "+":
-			case "*":
-				break;
-			case "-":
-			case "/":
-			case ">":
-			case ">=":
-			case "<":
-			case "<=":
-			case "=":
-				if(parameters(node)<2) return false;
-				break;
-			case "if":
-			case "defun":
-				//ifは(if x y)か(if x y z)の形である必要がある
-				//defunは(defun a (x))か(defun a (x) (y))の形である必要がある
-				switch(parameters(node)){
-					case 3:
-					case 4:
-						break;
-					default:
-						return false;
-				}
-				break;
-			case "setq":
-				if(parameters(node)!=3) return false;
-				break;
-		}
-		return true;
-
 	}
 }
 //演算・比較の処理を行う関数群
