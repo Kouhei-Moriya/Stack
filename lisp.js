@@ -166,7 +166,6 @@ function checkparam(node){
 //値の評価(typeで型を指定)
 function getvalue(node, type){
 	var value = new Cons("boolean","Nil",null);
-	var argument;
 	if(node!=null){
 		 switch(node.type){
 			case "object":
@@ -199,134 +198,146 @@ function getvalue(node, type){
 		default:
 			return value;
 	}
-
-	//演算の実行
-	function evallist(node){
-		if(node==null) return new Cons("boolean","Nil",null);
-		if(checkparam(node)==false)
-			throw "パラメータの数が正しくありません";
-		switch(node.car){
-			case "+":
-				return new Cons("number",add(node.cdr),null);
-			case "-":
-				return new Cons("number",subtract(node.cdr),null);
-			case "*":
-				return new Cons("number",multiply(node.cdr),null);
-			case "/":
-				return new Cons("number",divide(node.cdr),null);
-			case ">":
-				return (greaterthan(node.cdr.cdr,getvalue(node.cdr,"number"))
-					? new Cons("boolean","T",null)
-					: new Cons("boolean","Nil",null));
-			case ">=":
-				return (greaterthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
-					? new Cons("boolean","T",null)
-					: new Cons("boolean","Nil",null));
-			case "<":
-				return (lessthan(node.cdr.cdr,getvalue(node.cdr,"number"))
-					? new Cons("boolean","T",null)
-					: new Cons("boolean","Nil",null));
-			case "<=":
-				return (lessthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
-					? new Cons("boolean","T",null)
-					: new Cons("boolean","Nil",null));
-			case "=":
-				return (equal(node.cdr.cdr,getvalue(node.cdr,"number"))
-					? new Cons("boolean","T",null)
-					: new Cons("boolean","Nil",null));
-			case "if":
-				if(getvalue(node.cdr, "boolean")) return getvalue(node.cdr.cdr);
-				return getvalue(node.cdr.cdr.cdr);
-			case "setq":
-				if(node.cdr.type!="unknown")
-					throw "その語は変数として用いることができません";
-				variable[node.cdr.car] = getvalue(node.cdr.cdr);
-				return variable[node.cdr.car];
-			case "defun":
-				if(node.cdr.type!="unknown")
-					throw "その語は関数として用いることができません";
-				//node.cdr.cdr.carは引数のリスト,node.cdr.cdr.cdrは関数の式
-				checkarg(node.cdr.cdr);
-				func[node.cdr.car] = node.cdr.cdr;
-				return new Cons("function",node.cdr.car,null);
-			default:
-				if(node.type=="unknown" && node.car in func){
-					return getvalue(func[node.car].cdr);
-				}
-				if(node.type=="object")
-					throw "関数・演算名にリストを用いることはできません"
-				throw node.car + " という関数・演算はありません";
-				return;
-		}
-	}
-	//演算・比較の処理を行う関数群
-	function add(node){
-		if(node==null) return 0;
-		return getvalue(node,"number")+add(node.cdr);
-	}
-	function subtract(node){
-		return getvalue(node,"number")-add(node.cdr);
-	}
-	function multiply(node){
-		if(node==null) return 1;
-		return getvalue(node,"number")*multiply(node.cdr);
-	}
-	function divide(node){
-		return Math.floor(getvalue(node,"number")/multiply(node.cdr));
-	}
-	function greaterthan(node,value){
-		var operand;
-		if(node==null) return true;
-		operand = getvalue(node,"number");
-		if(greaterthan(node.cdr,operand)==false) return false;
-		return value>operand;
-	}
-	function greaterthanorequal(node,value){
-		var operand;
-		if(node==null) return true;
-		operand = getvalue(node,"number");
-		if(greaterthanorequal(node.cdr,operand)==false) return false;
-		return value>=operand;
-	}
-	function lessthan(node,value){
-		var operand;
-		if(node==null) return true;
-		operand = getvalue(node,"number");
-		if(lessthan(node.cdr,operand)==false) return false;
-		return value<operand;
-	}
-	function lessthanorequal(node,value){
-		var operand;
-		if(node==null) return true;
-		operand = getvalue(node,"number");
-		if(lessthanorequal(node.cdr,operand)==false) return false;
-		return value<=operand;
-	}
-	function equal(node,value){
-		var operand;
-		if(node==null) return true;
-		operand = getvalue(node,"number");
-		if(equal(node.cdr,operand)==false) return false;
-		return value==operand;
+}
+//演算の実行
+function evallist(node){
+	if(node==null) return new Cons("boolean","Nil",null);
+	if(checkparam(node)==false)
+		throw "パラメータの数が正しくありません";
+	switch(node.car){
+		case "+":
+			return new Cons("number",add(node.cdr),null);
+		case "-":
+			return new Cons("number",subtract(node.cdr),null);
+		case "*":
+			return new Cons("number",multiply(node.cdr),null);
+		case "/":
+			return new Cons("number",divide(node.cdr),null);
+		case ">":
+			return (greaterthan(node.cdr.cdr,getvalue(node.cdr,"number"))
+				? new Cons("boolean","T",null)
+				: new Cons("boolean","Nil",null));
+		case ">=":
+			return (greaterthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
+				? new Cons("boolean","T",null)
+				: new Cons("boolean","Nil",null));
+		case "<":
+			return (lessthan(node.cdr.cdr,getvalue(node.cdr,"number"))
+				? new Cons("boolean","T",null)
+				: new Cons("boolean","Nil",null));
+		case "<=":
+			return (lessthanorequal(node.cdr.cdr,getvalue(node.cdr,"number"))
+				? new Cons("boolean","T",null)
+				: new Cons("boolean","Nil",null));
+		case "=":
+			return (equal(node.cdr.cdr,getvalue(node.cdr,"number"))
+				? new Cons("boolean","T",null)
+				: new Cons("boolean","Nil",null));
+		case "if":
+			if(getvalue(node.cdr, "boolean")) return getvalue(node.cdr.cdr);
+			return getvalue(node.cdr.cdr.cdr);
+		case "setq":
+			if(node.cdr.type!="unknown")
+				throw "その語は変数として用いることができません";
+			//node.cdr.carは変数名,node.cdr.cdrは値
+			variable[node.cdr.car] = getvalue(node.cdr.cdr);
+			return variable[node.cdr.car];
+		case "defun":
+			if(node.cdr.type!="unknown")
+				throw "その語は関数として用いることができません";
+			//node.cdr.carは関数名,node.cdr.cdr.carは引数のリスト,node.cdr.cdr.cdrは関数の式
+			if(node.cdr.cdr.type!="object")
+				throw "関数の引数がリストになっていません";
+			setarg(node.cdr.cdr.car);
+			func[node.cdr.car] = node.cdr.cdr;
+			return new Cons("function",node.cdr.car,null);
+		default:
+			//func[xxx].carは引数の形式,func[xxx].cdrは関数の式,node.cdrは引数の値
+			if(node.type=="unknown" && node.car in func){
+				return getvalue(func[node.car].cdr);
+			}
+			if(node.type=="object")
+				throw "関数・演算名にリストを用いることはできません"
+			throw node.car + " という関数・演算はありません";
+			return;
 	}
 }
-function checkarg(node){
+//演算・比較の処理を行う関数群
+function add(node){
+	if(node==null) return 0;
+	return getvalue(node,"number")+add(node.cdr);
+}
+function subtract(node){
+	return getvalue(node,"number")-add(node.cdr);
+}
+function multiply(node){
+	if(node==null) return 1;
+	return getvalue(node,"number")*multiply(node.cdr);
+}
+function divide(node){
+	return Math.floor(getvalue(node,"number")/multiply(node.cdr));
+}
+function greaterthan(node,value){
+	var operand;
+	if(node==null) return true;
+	operand = getvalue(node,"number");
+	if(greaterthan(node.cdr,operand)==false) return false;
+	return value>operand;
+}
+function greaterthanorequal(node,value){
+	var operand;
+	if(node==null) return true;
+	operand = getvalue(node,"number");
+	if(greaterthanorequal(node.cdr,operand)==false) return false;
+	return value>=operand;
+}
+function lessthan(node,value){
+	var operand;
+	if(node==null) return true;
+	operand = getvalue(node,"number");
+	if(lessthan(node.cdr,operand)==false) return false;
+	return value<operand;
+}
+function lessthanorequal(node,value){
+	var operand;
+	if(node==null) return true;
+	operand = getvalue(node,"number");
+	if(lessthanorequal(node.cdr,operand)==false) return false;
+	return value<=operand;
+}
+function equal(node,value){
+	var operand;
+	if(node==null) return true;
+	operand = getvalue(node,"number");
+	if(equal(node.cdr,operand)==false) return false;
+	return value==operand;
+}
+/*formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木
+  valueを与えない場合はformに与えた形式が正常かをチェックする
+  valueを与えた場合は引数を連想配列に代入 */
+function setarg(form, value){
 	var arglist = {};
-	if(node.type!="object")
-		throw "関数の引数がリストになっていません";
-	getarglist(node.car);
-	return;
+	if(value==null) setargform(form);
+	else setargvalue(form,value);
+	return arglist;
 
-	function getarglist(node){
-		if(node==null) return;
-		if(node.type=="object")
+	function setargform(form){
+		if(form==null) return;
+		if(form.type=="object")
 			throw "引数リストの中にリストが含まれています";
-		if(node.type!="unknown")
+		if(form.type!="unknown")
 			throw "その語は引数として用いることができません";
-		if(node.car in arglist)
+		if(form.car in arglist)
 			throw "同じ文字の引数が2つ以上あります";
-		arglist[node.car] = true;
-		getarglist(node.cdr);
+		arglist[form.car] = null;
+		setargform(form.cdr);
+		return;
+	}
+	function setargvalue(form, value){
+		if(value==null) return;
+		arglist[form.car] = getvalue(value);
+		setargvalue(form.cdr, value.cdr);
+		return;
 	}
 }
 
