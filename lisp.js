@@ -1,23 +1,52 @@
-//シェルのコード(資料より)
-var readline = require("readline");
+//全体で使う領域群
+//変数
+var variable = {};
+//関数
+var func = {};
+//引数スタック
+var argument = new Array();
 
-var repl = readline.createInterface(process.stdin, process.stdout);
-//プロンプトの形を設定
-repl.setPrompt(">>> ");
+//パラメータ読み込み
+var args = process.argv;
+switch(args.length){
+	case 2:
+		//シェルのコード(資料より)
+		var readline = require("readline");
+		
+		var repl = readline.createInterface(process.stdin, process.stdout);
+		//プロンプトの形を設定
+		repl.setPrompt(">>> ");
+		
+		//プロンプトを出す
+		repl.prompt();
 
-//プロンプトを出す
-repl.prompt();
-
-// mainループ
-repl.on("line", function(line) {
-	mylisp(line); //変数lineにシェルに入力した文字列が入るので、これを解析すれば良い。
-	repl.prompt();
-});
-
-// 終了時に呼ぶ
-repl.on("close", function() {
-	console.log("bye!");
-});
+		// mainループ
+		repl.on("line", function(line) {
+			mylisp(line); //変数lineにシェルに入力した文字列が入るので、これを解析すれば良い。
+			repl.prompt();
+		});
+		
+		// 終了時に呼ぶ
+		repl.on("close", function() {
+			console.log("bye!");
+		});
+		break;
+	case 3:
+		var fs = require('fs');
+		fs.readFile(args[2], 'utf8', function(err, str) {
+			if(err){
+				console.log(err);
+			}else{
+				var filestr = str.replace(/[\r\n\t ]+/g, " ");
+				console.log(">>> " +filestr);
+				mylisp(filestr);
+			}
+		});
+		break;
+	default:
+		throw "コマンドラインに与えた引数の数が異常です";
+		break;
+}
 
 //抽象構文木
 function Cons(type,car,cdr) {
@@ -26,19 +55,11 @@ function Cons(type,car,cdr) {
 	this.cdr = cdr;
 }
 
-//全体で使う領域群
-//変数
-var variable = {};
-//関数
-var func = {};
-//引数スタック
-var argument = new Array();;
-
 //ここから作成箇所
 function mylisp(line){
 	//字句解析
 	var Token = new Array();
-	var p = 0;
+	var i, p = 0;
 	for(i=0; i<line.length; i++){
 		switch(line.charAt(i)){
 			case "(":
@@ -76,7 +97,11 @@ function mylisp(line){
 	}
 
 	//評価を書く場所
-	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
+	for(i=0; i<consroot.length; i++) {
+		console.log("loop:"+i);
+		console.log(getvalue(consroot[i]).car);
+	}
+	return;
 
 	//構文解析用関数(引数がTokenの要素)
 	//構文木を作る関数
@@ -167,7 +192,7 @@ function checkparam(node){
 }
 //値の評価(typeで型を指定)
 function getvalue(node, type){
-	var value = new Cons("boolean","Nil",null);
+	var value = new Cons("boolean","Nil",null), i;
 	if(node!=null){
 		 typecase: switch(node.type){
 			case "object":
