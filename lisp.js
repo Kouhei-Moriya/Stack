@@ -31,6 +31,8 @@ function Cons(type,car,cdr) {
 var variable = {};
 //関数
 var func = {};
+//引数スタック
+var argument = new Array();;
 
 //ここから作成箇所
 function mylisp(line){
@@ -176,10 +178,11 @@ function getvalue(node, type){
 			case "boolean":
 				value = new Cons(node.type,node.car,null);
 				break;
-			case "argument":
-				//
 			case "unknown":
-				if(node.car in variable){
+				if(node.car in argument[0]){
+					value = argument[0][node.car];
+					break;
+				}else if(node.car in variable){
 					value = variable[node.car];
 					break;
 				}
@@ -254,6 +257,7 @@ function evallist(node){
 		default:
 			//func[xxx].carは引数の形式,func[xxx].cdrは関数の式,node.cdrは引数の値
 			if(node.type=="unknown" && node.car in func){
+				argument.unshift(setarg(func[node.car].car,node.cdr));
 				return getvalue(func[node.car].cdr);
 			}
 			if(node.type=="object")
