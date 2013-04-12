@@ -242,12 +242,16 @@ function getvalue(node, type){
 			case "defun":
 				if(node.cdr.type!="unknown")
 					throw "その語は関数として用いることができません";
-				func[node.cdr.car] = setfunc(node.cdr.cdr);
-				return new Cons("unknown",node.cdr.car,null);
+				//node.cdr.cdr.carは引数のリスト,node.cdr.cdr.cdrは関数の式
+				checkarg(node.cdr.cdr);
+				func[node.cdr.car] = checkarg(node.cdr.cdr);
+				return new Cons("function",node.cdr.car,null);
 			default:
 				if(node.type=="unknown" && node.car in func){
-					return getvalue(func[node.car]);
+					return getvalue(func[node.car].cdr);
 				}
+				if(node.type=="object")
+					throw "関数・演算名にリストが用いられています"
 				throw node.car + " という関数・演算はありません";
 				return;
 		}
@@ -303,13 +307,12 @@ function getvalue(node, type){
 		return value==operand;
 	}
 }
-function setfunc(node){
+function checkarg(node){
+	var arglist = {}, i = 0;
 	if(node.type!="object")
 		throw "関数の引数がリストになっていません";
-	//node.carは引数のリスト,node.cdrは関数の式
-	var arglist = {}, i = 0;
 	getarglist(node.car);
-	return setformula(node.cdr);
+	return new Cons(node.type,node.car,(node.cdr));
 
 	function getarglist(node){
 		if(node==null) return;
@@ -320,14 +323,11 @@ function setfunc(node){
 		if(node.car in arglist)
 			throw "同じ文字の引数が2つ以上あります";
 		arglist[node.car] = i;
-		i++;
 		getarglist(node.cdr);
 	}
-	function setformula(node){
+	function setarg(node){
 		if(node==null) return null;
-		if(node.type=="object") return new Cons("object", setformula(node.car), setformula(node.cdr));
-		if(node.car in arglist) return new Cons("argument", arglist[node.car], setformula(node.cdr));
-		return new Cons(node.type, node.car, setformula(node.cdr));
+		if(node.type=="object");
 	}
 }
 
