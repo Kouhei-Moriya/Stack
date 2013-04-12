@@ -157,6 +157,11 @@ function checkparam(node){
 		case "setq":
 			if(parameters(node)!=3) return false;
 			break;
+		default:
+			if(node.type=="unknown" && node.car in func){
+				if(parameters(func[node.car].car)==parameters(node)) return false;
+			}
+			break;
 	}
 	return true;
 }
@@ -244,14 +249,14 @@ function getvalue(node, type){
 					throw "その語は関数として用いることができません";
 				//node.cdr.cdr.carは引数のリスト,node.cdr.cdr.cdrは関数の式
 				checkarg(node.cdr.cdr);
-				func[node.cdr.car] = checkarg(node.cdr.cdr);
+				func[node.cdr.car] = node.cdr.cdr;
 				return new Cons("function",node.cdr.car,null);
 			default:
 				if(node.type=="unknown" && node.car in func){
 					return getvalue(func[node.car].cdr);
 				}
 				if(node.type=="object")
-					throw "関数・演算名にリストが用いられています"
+					throw "関数・演算名にリストを用いることはできません"
 				throw node.car + " という関数・演算はありません";
 				return;
 		}
@@ -308,11 +313,11 @@ function getvalue(node, type){
 	}
 }
 function checkarg(node){
-	var arglist = {}, i = 0;
+	var arglist = {};
 	if(node.type!="object")
 		throw "関数の引数がリストになっていません";
 	getarglist(node.car);
-	return new Cons(node.type,node.car,(node.cdr));
+	return;
 
 	function getarglist(node){
 		if(node==null) return;
@@ -322,12 +327,8 @@ function checkarg(node){
 			throw "その語は引数として用いることができません";
 		if(node.car in arglist)
 			throw "同じ文字の引数が2つ以上あります";
-		arglist[node.car] = i;
+		arglist[node.car] = true;
 		getarglist(node.cdr);
-	}
-	function setarg(node){
-		if(node==null) return null;
-		if(node.type=="object");
 	}
 }
 
