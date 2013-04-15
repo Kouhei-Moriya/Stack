@@ -80,9 +80,6 @@ function mylisp(line){
 		if(Token[i]=="(") console.log(nest(i));
 	} */
 
-	//文字列扱いの数字をparseFloatする
-	for(i=0; i<Token.length; i++) if(isNaN(Token[i])==false) Token[i]=parseFloat(Token[i]);
-
 	//構文解析を書く場所
 	var consroot = new Array();
 	for(i=0; i<Token.length; i++){
@@ -140,7 +137,7 @@ function gettype(value){
 		case "defun":
 			return "reserved";
 		default:
-			if(typeof value == "number") return "number";
+			if(isNaN(value)==false) return "number";
 			if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
 	}
 	return "unknown";
@@ -196,6 +193,8 @@ function getvalue(node, type){
 				value = evallist(node.car);
 				break;
 			case "number":
+				value = new Cons(node.type,parseFloat(node.car),null);
+				break;
 			case "string":
 			case "boolean":
 				value = new Cons(node.type,node.car,null);
@@ -341,6 +340,21 @@ function equal(node,value){
 	operand = getvalue(node,"number");
 	if(equal(node.cdr,operand)==false) return false;
 	return value==operand;
+}
+//分数になっている文字列を渡すことで約分する
+function reduction(value){
+	var fraction = value.split("/");
+	var numerator = parseInt(fraction[0]), denominator = parseInt(fraction[1]), factor;
+	
+	if(numerator < denominator) factor = euclid(denominator, numerator);
+	else factor = euclid(numerator, denominator);
+	if(factor==denominator) return numerator.toString(10);
+	return (numerator / factor) + "/" + (denominator / factor);
+}
+//最大公約数を求める(m>=nの状態で呼ぶこと)
+function euclid(m, n){
+        if(n==0) return m;
+        return euclid(n, m%n);
 }
 /*formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木
   valueを与えない場合はformに与えた形式が正常かをチェックする
