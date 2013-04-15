@@ -80,8 +80,8 @@ function mylisp(line){
 		if(Token[i]=="(") console.log(nest(i));
 	} */
 
-	//文字列扱いの数字をparseIntする
-	for(i=0; i<Token.length; i++) if(isNaN(Token[i])==false) Token[i]=parseInt(Token[i]);
+	//文字列扱いの数字をparseFloatする
+	for(i=0; i<Token.length; i++) if(isNaN(Token[i])==false) Token[i]=parseFloat(Token[i]);
 
 	//構文解析を書く場所
 	var consroot = new Array();
@@ -305,7 +305,7 @@ function multiply(node){
 	return getvalue(node,"number")*multiply(node.cdr);
 }
 function divide(node){
-	return Math.floor(getvalue(node,"number")/multiply(node.cdr));
+	return getvalue(node,"number")/multiply(node.cdr);
 }
 function greaterthan(node,value){
 	var operand;
