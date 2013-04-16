@@ -134,12 +134,15 @@ function parsecons(Token){
 		return "unknown";
 	}
 }
-/*	//構文木を文字列に戻す関数
-	function parseword(node){
-		if(node==null) return "";
-		if(node.type=="object") return "(" + parseword(node.car) + ")" + parseword(node.cdr);
-		return node.car + " " + parseword(node.cdr);
-	} */
+//構文木を文字列に戻す関数
+function parseword(node){
+	var str;
+	if(node==null) return "";
+	if(node.type=="object") str = "(" + parseword(node.car) + ")";
+	else str = node.car;
+	if(node.cdr==null) return str;
+	return str + " " + parseword(node.cdr);
+}
 
 //評価用の関数(引数が構文木)
 //cdrで繋がっているノードの数を数える
@@ -292,7 +295,6 @@ function evallist(node){
 			if(node.type=="object")
 				throw "関数・演算名にリストを用いることはできません"
 			throw node.car + " という関数・演算はありません";
-			return;
 	}
 }
 //演算・比較の処理を行う関数群
