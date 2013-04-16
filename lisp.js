@@ -216,13 +216,13 @@ function getvalue(node, type){
 					break;
 				}
 			default:
-				throw parseword(node.car) + " は値ではありません";
+				throw parseword(node) + " は値ではありません";
 		}
 	}
 	switch(type){
 		case "number":
 			if(value.type!="number")
-				throw parseword(value.car) + " を数値として解釈できません";
+				throw parseword(value) + " を数値として解釈できません";
 			return value.car;
 		case "boolean":
 			return value.car != "Nil";
