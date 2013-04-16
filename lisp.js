@@ -86,9 +86,11 @@ function tokenize(word){
 //配列となっている字句を構文木にする
 function parsecons(Token){
 	var consroot = new Array(), i;
+	//括弧の関係チェック
+	if(bracket(-1) != null)
+		throw "\")\"に対応する\"(\"がありません";
+
 	for(i=0; i<Token.length; i++){
-		if(Token[i]==")")
-			throw "\")\"に対応する\"(\"がありません";
 		if(Token[i]=="("){
 			consroot.push(new Cons("object",createobj(i+1),null));
 			i=bracket(i);
@@ -108,9 +110,13 @@ function parsecons(Token){
 		var i;
 		for(i=pos+1; i<Token.length; i++){
 			if(Token[i]==")") return i;
-			if(Token[i]=="(") i=bracket(i);
+			if(Token[i]=="("){
+				i=bracket(i);
+				if(i==null)
+					throw "\"(\"に対応する\")\"がありません";
+			}
 		}
-		return;
+		return null;
 	}
 	//carに入れる値を引数とし、入れるべきtypeを返す
 	function gettype(value){
@@ -202,10 +208,10 @@ function getvalue(node, type){
 					value = argument[0][node.car];
 					break;
 				}
-				/*for(i=0; i<argument.length; i++) if(node.car in argument[i]){
-					value = argument[i][node.car];
-					break typecase;
-				} */
+				/*	for(i=0; i<argument.length; i++) if(node.car in argument[i]){
+						value = argument[i][node.car];
+						break typecase;
+					} */
 				if(node.car in variable){
 					value = variable[node.car];
 					break;
@@ -354,8 +360,8 @@ function equal(node,value){
 	}
 	//最大公約数を求める(m>=nの状態で呼ぶこと)
 	function euclid(m, n){
-	        if(n==0) return m;
-	        return euclid(n, m%n);
+		if(n==0) return m;
+		return euclid(n, m%n);
 	} */
 //関数定義前の引数形式のチェック
 function checkarg(form){
