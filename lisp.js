@@ -56,49 +56,52 @@ function Cons(type,car,cdr) {
 }
 
 //ここから作成箇所
-function mylisp(line){
-	//字句解析
-	var Token = new Array();
-	var i, p = 0;
-	for(i=0; i<line.length; i++){
-		switch(line.charAt(i)){
+function mylisp(word){
+	var consroot = parsecons(tokenize(word)), i;
+
+	//評価
+	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
+	return;
+}
+//字句を()と空白で区切った配列に分割する
+function tokenize(word){
+	var Token = new Array(), p = 0, i;
+	for(i=0; i<word.length; i++){
+		switch(word.charAt(i)){
 			case "(":
 			case ")":
-				if(i>p) Token.push(line.substring(p,i));
-				Token.push(line.charAt(i));
+				if(i>p) Token.push(word.substring(p,i));
+				Token.push(word.charAt(i));
 				p = i+1;
 				break;
 			case " ":
-				if(i>p) Token.push(line.substring(p,i));
+				if(i>p) Token.push(word.substring(p,i));
 				p = i+1;
 				break;
 		}
 	}
-	if(p<line.length) Token.push(line.substring(p));
-
-	//構文解析を書く場所
-	var consroot = new Array();
+	if(p<word.length) Token.push(word.substring(p));
+	return Token;
+}
+//配列となっている字句を構文木にする
+function parsecons(Token){
+	var consroot = new Array(), i;
 	for(i=0; i<Token.length; i++){
 		if(Token[i]==")")
 			throw "\")\"に対応する\"(\"がありません";
 		if(Token[i]=="("){
-			consroot.push(new Cons("object",createcons(i+1),null));
+			consroot.push(new Cons("object",createobj(i+1),null));
 			i=bracket(i);
 		}else consroot.push(new Cons(gettype(Token[i]),Token[i],null));
 	}
+	return consroot;
 
-	//評価を書く場所
-	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
-	return;
-
-	//構文解析用関数(引数がTokenの要素)
-	//構文木を作る関数
-	function createcons(pos){
+	function createobj(pos){
 		if(pos>=Token.length)
 			throw "\"(\"に対応する\")\"がありません";
 		if(Token[pos]==")") return null;
-		if(Token[pos]=="(") return new Cons("object",createcons(pos+1),createcons(bracket(pos)+1));
-		return new Cons(gettype(Token[pos]),Token[pos],createcons(pos+1));
+		if(Token[pos]=="(") return new Cons("object",createobj(pos+1),createobj(bracket(pos)+1));
+		return new Cons(gettype(Token[pos]),Token[pos],createobj(pos+1));
 	}
 	//"("の入っている要素を指定、対応する")"のある要素を返す
 	function bracket(pos){
@@ -109,33 +112,33 @@ function mylisp(line){
 		}
 		return;
 	}
+	//carに入れる値を引数とし、入れるべきtypeを返す
+	function gettype(value){
+		switch(value){
+			case "T":
+			case "Nil":
+				return "boolean";
+			case "+":
+			case "-":
+			case "*":
+			case "/":
+			case ">":
+			case ">=":
+			case "<":
+			case "<=":
+			case "=":
+			case "if":
+			case "setq":
+			case "defun":
+				return "reserved";
+			default:
+				if(isNaN(value)==false) return "number";
+				if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
+		}
+		return "unknown";
+	}
 }
 
-//carに入れる値を引数とし、入れるべきtypeを返す
-function gettype(value){
-	switch(value){
-		case "T":
-		case "Nil":
-			return "boolean";
-		case "+":
-		case "-":
-		case "*":
-		case "/":
-		case ">":
-		case ">=":
-		case "<":
-		case "<=":
-		case "=":
-		case "if":
-		case "setq":
-		case "defun":
-			return "reserved";
-		default:
-			if(isNaN(value)==false) return "number";
-			if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
-	}
-	return "unknown";
-}
 //評価用の関数(引数が構文木)
 //cdrで繋がっているノードの数を数える
 function parameters(node){
@@ -180,9 +183,9 @@ function checkparam(node){
 }
 //値の評価(typeで型を指定)
 function getvalue(node, type){
-	var value = new Cons("boolean","Nil",null), i;
+	var value = new Cons("boolean","Nil",null);
 	if(node!=null){
-		 //typecase: switch(node.type){
+		 //typecase:
 		 switch(node.type){
 			case "object":
 				value = evallist(node.car);
@@ -273,7 +276,7 @@ function evallist(node){
 			//node.cdr.carは関数名,node.cdr.cdr.carは引数のリスト,node.cdr.cdr.cdrは関数の式
 			if(node.cdr.cdr.type!="object")
 				throw "関数の引数がリストになっていません";
-			setarg(node.cdr.cdr.car);
+			checkarg(node.cdr.cdr.car);
 			func[node.cdr.car] = node.cdr.cdr;
 			return new Cons("function",node.cdr.car,null);
 		default:
@@ -354,28 +357,22 @@ function equal(node,value){
 	        if(n==0) return m;
 	        return euclid(n, m%n);
 	} */
-/*formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木
-  valueを与えない場合はformに与えた形式が正常かをチェックする
-  valueを与えた場合は引数を連想配列に代入
-  defは一つ前のネストでの引数連想配列のコピー */
+//関数定義前の引数形式のチェック
+function checkarg(form){
+	if(form==null) return;
+	if(form.type=="object")
+		throw "引数リストの中にリストが含まれています";
+	if(form.type!="unknown")
+		throw "その語は引数として用いることができません";
+	checkarg(form.cdr);
+	return;
+}
+//formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木、引数を連想配列へ代入する
 function setarg(form, value){
 	var arglist = {};
-	if(value==null) setargform(form);
-	else setargvalue(form,value);
+	setargvalue(form, value);
 	return arglist;
 
-	function setargform(form){
-		if(form==null) return;
-		if(form.type=="object")
-			throw "引数リストの中にリストが含まれています";
-		if(form.type!="unknown")
-			throw "その語は引数として用いることができません";
-		if(form.car in arglist)
-			throw "同じ文字の引数が2つ以上あります";
-		arglist[form.car] = null;
-		setargform(form.cdr);
-		return;
-	}
 	function setargvalue(form, value){
 		if(value==null) return;
 		arglist[form.car] = getvalue(value);
