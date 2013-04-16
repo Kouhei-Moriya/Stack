@@ -55,12 +55,10 @@ function Cons(type,car,cdr) {
 	this.cdr = cdr;
 }
 
-//ここから作成箇所
+//lisp構文を引数として字句解析、構文解析を行い、評価して結果をコンソールに表示
 function mylisp(word){
-	var consroot = parsecons(tokenize(word)), i;
-
-	//評価
-	for(i=0; i<consroot.length; i++) console.log(getvalue(consroot[i]).car);
+	var i;
+	for(i=parsecons(tokenize(word)); i!=null; i=i.cdr) console.log(getvalue(i).car);
 	return;
 }
 //字句を()と空白で区切った配列に分割する
@@ -85,22 +83,14 @@ function tokenize(word){
 }
 //配列となっている字句を構文木にする
 function parsecons(Token){
-	var consroot = new Array(), i;
 	//括弧の関係チェック
 	if(bracket(-1) != null)
 		throw "\")\"に対応する\"(\"がありません";
+	return createobj(0);
 
-	for(i=0; i<Token.length; i++){
-		if(Token[i]=="("){
-			consroot.push(new Cons("object",createobj(i+1),null));
-			i=bracket(i);
-		}else consroot.push(new Cons(gettype(Token[i]),Token[i],null));
-	}
-	return consroot;
-
+	//carに現在の位置の値、cdrに次の位置を入れたconsを返す
 	function createobj(pos){
-		if(pos>=Token.length)
-			throw "\"(\"に対応する\")\"がありません";
+		if(pos>=Token.length) return null;
 		if(Token[pos]==")") return null;
 		if(Token[pos]=="(") return new Cons("object",createobj(pos+1),createobj(bracket(pos)+1));
 		return new Cons(gettype(Token[pos]),Token[pos],createobj(pos+1));
