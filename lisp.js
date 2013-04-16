@@ -33,7 +33,7 @@ switch(args.length){
 		break;
 	case 3:
 		var fs = require('fs');
-		fs.readFile(args[2], 'utf8', function(err, str) {
+		fs.readFile(args[2], 'utf8', function(err, str){
 			if(err){
 				console.log(err);
 			}else{
@@ -75,10 +75,6 @@ function mylisp(line){
 		}
 	}
 	if(p<line.length) Token.push(line.substring(p));
-	/* for(i=0; i<Token.length; i++){
-		console.log("Token[" + i + "]:" + Token[i]);
-		if(Token[i]=="(") console.log(nest(i));
-	} */
 
 	//構文解析を書く場所
 	var consroot = new Array();
@@ -88,9 +84,7 @@ function mylisp(line){
 		if(Token[i]=="("){
 			consroot.push(new Cons("object",createcons(i+1),null));
 			i=bracket(i);
-		}else{		
-			consroot.push(new Cons(gettype(Token[i]),Token[i],null));
-		}
+		}else consroot.push(new Cons(gettype(Token[i]),Token[i],null));
 	}
 
 	//評価を書く場所
@@ -188,7 +182,8 @@ function checkparam(node){
 function getvalue(node, type){
 	var value = new Cons("boolean","Nil",null), i;
 	if(node!=null){
-		 typecase: switch(node.type){
+		 //typecase: switch(node.type){
+		 switch(node.type){
 			case "object":
 				value = evallist(node.car);
 				break;
@@ -200,10 +195,14 @@ function getvalue(node, type){
 				value = new Cons(node.type,node.car,null);
 				break;
 			case "unknown":
-				for(i=0; i<argument.length; i++) if(node.car in argument[i]){
+				if(node.car in argument[0]){
+					value = argument[0][node.car];
+					break;
+				}
+				/*for(i=0; i<argument.length; i++) if(node.car in argument[i]){
 					value = argument[i][node.car];
 					break typecase;
-				}
+				} */
 				if(node.car in variable){
 					value = variable[node.car];
 					break;
@@ -341,21 +340,20 @@ function equal(node,value){
 	if(equal(node.cdr,operand)==false) return false;
 	return value==operand;
 }
-//分数になっている文字列を渡すことで約分する
-function reduction(value){
-	var fraction = value.split("/");
-	var numerator = parseInt(fraction[0]), denominator = parseInt(fraction[1]), factor;
-	
-	if(numerator < denominator) factor = euclid(denominator, numerator);
-	else factor = euclid(numerator, denominator);
-	if(factor==denominator) return numerator.toString(10);
-	return (numerator / factor) + "/" + (denominator / factor);
-}
-//最大公約数を求める(m>=nの状態で呼ぶこと)
-function euclid(m, n){
-        if(n==0) return m;
-        return euclid(n, m%n);
-}
+/*	//分数になっている文字列を渡すことで約分する
+	function reduction(value){
+		var fraction = value.split("/");
+		var numerator = parseInt(fraction[0]), denominator = parseInt(fraction[1]), factor;		
+		if(numerator < denominator) factor = euclid(denominator, numerator);
+		else factor = euclid(numerator, denominator);
+		if(factor==denominator) return numerator.toString(10);
+		return (numerator / factor) + "/" + (denominator / factor);
+	}
+	//最大公約数を求める(m>=nの状態で呼ぶこと)
+	function euclid(m, n){
+	        if(n==0) return m;
+	        return euclid(n, m%n);
+	} */
 /*formはdefunで記憶した引数の形式、valueはそれと一致した形の引数の構文木
   valueを与えない場合はformに与えた形式が正常かをチェックする
   valueを与えた場合は引数を連想配列に代入
