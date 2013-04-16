@@ -195,7 +195,7 @@ function getvalue(node, type){
 				value = new Cons(node.type,node.car,null);
 				break;
 			case "unknown":
-				if(node.car in argument[0]){
+				if(argument.length > 0 && node.car in argument[0]){
 					value = argument[0][node.car];
 					break;
 				}
