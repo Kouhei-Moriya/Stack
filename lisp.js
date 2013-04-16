@@ -90,8 +90,7 @@ function parsecons(Token){
 
 	//carに現在の位置の値、cdrに次の位置を入れたconsを返す
 	function createobj(pos){
-		if(pos>=Token.length) return null;
-		if(Token[pos]==")") return null;
+		if(pos>=Token.length || Token[pos]==")") return null;
 		if(Token[pos]=="(") return new Cons("object",createobj(pos+1),createobj(bracket(pos)+1));
 		return new Cons(gettype(Token[pos]),Token[pos],createobj(pos+1));
 	}
@@ -130,10 +129,17 @@ function parsecons(Token){
 			default:
 				if(isNaN(value)==false) return "number";
 				if(value.charAt(0)=="\"" && value.charAt(value.length-1)=="\"") return "string";
+				break;
 		}
 		return "unknown";
 	}
 }
+/*	//構文木を文字列に戻す関数
+	function parseword(node){
+		if(node==null) return "";
+		if(node.type=="object") return "(" + parseword(node.car) + ")" + parseword(node.cdr);
+		return node.car + " " + parseword(node.cdr);
+	} */
 
 //評価用の関数(引数が構文木)
 //cdrで繋がっているノードの数を数える
