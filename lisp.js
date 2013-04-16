@@ -292,9 +292,7 @@ function evallist(node){
 				argument.shift();
 				return temp;
 			}
-			if(node.type=="object")
-				throw "関数・演算名にリストを用いることはできません"
-			throw node.car + " という関数・演算はありません";
+			throw parseword(node) + " という関数・演算はありません";
 	}
 }
 //演算・比較の処理を行う関数群
